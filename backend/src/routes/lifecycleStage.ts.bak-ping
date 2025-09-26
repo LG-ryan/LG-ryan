@@ -1,0 +1,94 @@
+﻿import { Router, Request, Response } from "express";
+const router = Router();
+
+/**
+ * POST /api/v1/lifecycle/stage
+ * body: { vehicleType: "suv"|"sedan"|"hatchback"|"sports", years:number, odometer:number }
+ * return: { stage:string, color:string, label:string, reason:string, advice:string, threshold:{vehicleType:string, yearsRange:[number,number], kmRange:[number,number]}, meta:{version:string,notes:string} }
+ */
+type VType = "suv" | "sedan" | "hatchback" | "sports";
+type StageKey = "Blue" | "Green" | "Mint" | "Yellow" | "Orange" | "Red";
+
+const TABLE: Record<VType, Array<{
+  key: StageKey; label: string; color: string;
+  yearsMin: number; yearsMax: number | null;
+  kmMin: number;    kmMax: number | null;
+  reason: string;   advice: string;
+}>> = {
+  suv: [
+    { key:"Blue",  label:"신차감",   color:"🔵", yearsMin:0, yearsMax:1,    kmMin:0,     kmMax:20000,  reason:"초기 적응 단계",                      advice:"주행 습관 기록, 초기점검" },
+    { key:"Green", label:"최적",     color:"🟢", yearsMin:1, yearsMax:3,    kmMin:20000, kmMax:60000, reason:"패밀리카 안정기",                    advice:"유지비 최저, 정기 점검 유지" },
+    { key:"Mint",  label:"안정",     color:"🟢", yearsMin:3, yearsMax:5,    kmMin:60000, kmMax:100000,reason:"보증만료 직전/직후",                 advice:"보증 만료 전 종합점검, 잔존가치 체크" },
+    { key:"Yellow",label:"주의",     color:"🟡", yearsMin:5, yearsMax:8,    kmMin:100000,kmMax:160000,reason:"하체/냉각계 교체 주기",              advice:"예방정비·보험료 관리" },
+    { key:"Orange",label:"관리집중", color:"🟠", yearsMin:8, yearsMax:12,   kmMin:160000,kmMax:220000,reason:"서스펜션/브레이크 큰 교체",          advice:"수리비 예산 대비" },
+    { key:"Red",   label:"전환권장", color:"🔴", yearsMin:12,yearsMax:null, kmMin:220000,kmMax:null,  reason:"안전·연비 저하, 잦은 고장",           advice:"판매/교체 시점 검토" },
+  ],
+  sedan: [
+    { key:"Blue",  label:"신차감",   color:"🔵", yearsMin:0, yearsMax:1,    kmMin:0,     kmMax:15000,  reason:"초기 적응 단계",                      advice:"주행 습관 기록, 초기점검" },
+    { key:"Green", label:"최적",     color:"🟢", yearsMin:1, yearsMax:3,    kmMin:15000, kmMax:50000, reason:"컨디션 최상, 감가 완만",              advice:"유지비 최저" },
+    { key:"Mint",  label:"안정",     color:"🟢", yearsMin:3, yearsMax:5,    kmMin:50000, kmMax:90000, reason:"소모품/타이어 교체 시기",            advice:"보증 만료 전 종합점검" },
+    { key:"Yellow",label:"주의",     color:"🟡", yearsMin:5, yearsMax:8,    kmMin:90000, kmMax:140000,reason:"누적 피로로 잡소리/누유 가능",       advice:"예방정비 계획" },
+    { key:"Orange",label:"관리집중", color:"🟠", yearsMin:8, yearsMax:12,   kmMin:140000,kmMax:200000,reason:"대수선 고민 시점",                   advice:"예산 대비·보유/매각 비교" },
+    { key:"Red",   label:"전환권장", color:"🔴", yearsMin:12,yearsMax:null, kmMin:200000,kmMax:null,  reason:"감가 종료, 교체 시점",               advice:"판매/교체 타이밍" },
+  ],
+  hatchback: [
+    { key:"Blue",  label:"신차감",   color:"🔵", yearsMin:0, yearsMax:1,    kmMin:0,     kmMax:15000,  reason:"초기 적응 단계",                      advice:"주행 습관 기록, 초기점검" },
+    { key:"Green", label:"최적",     color:"🟢", yearsMin:1, yearsMax:3,    kmMin:15000, kmMax:50000, reason:"컨디션 최상, 감가 완만",              advice:"유지비 최저" },
+    { key:"Mint",  label:"안정",     color:"🟢", yearsMin:3, yearsMax:5,    kmMin:50000, kmMax:90000, reason:"소모품/타이어 교체 시기",            advice:"보증 만료 전 종합점검" },
+    { key:"Yellow",label:"주의",     color:"🟡", yearsMin:5, yearsMax:8,    kmMin:90000, kmMax:140000,reason:"누적 피로로 잡소리/누유 가능",       advice:"예방정비 계획" },
+    { key:"Orange",label:"관리집중", color:"🟠", yearsMin:8, yearsMax:12,   kmMin:140000,kmMax:200000,reason:"대수선 고민 시점",                   advice:"예산 대비·보유/매각 비교" },
+    { key:"Red",   label:"전환권장", color:"🔴", yearsMin:12,yearsMax:null, kmMin:200000,kmMax:null,  reason:"감가 종료, 교체 시점",               advice:"판매/교체 타이밍" },
+  ],
+  sports: [
+    { key:"Blue",  label:"신차감",   color:"🔵", yearsMin:0,    yearsMax:0.5, kmMin:0,     kmMax:10000,  reason:"초기 적응, 고RPM 사용 편차 큼",    advice:"초기점검·주행로그" },
+    { key:"Green", label:"최적",     color:"🟢", yearsMin:0.5,  yearsMax:1.5, kmMin:10000, kmMax:30000, reason:"성능 체감 극대",                   advice:"컨디션 유지" },
+    { key:"Mint",  label:"안정",     color:"🟢", yearsMin:1.5,  yearsMax:3,   kmMin:30000, kmMax:60000, reason:"컨디션 유지 vs 사용강도에 따라 차", advice:"주요 소모품 점검" },
+    { key:"Yellow",label:"주의",     color:"🟡", yearsMin:3,    yearsMax:5,   kmMin:60000, kmMax:90000, reason:"엔진/미션 관리 중요",               advice:"예방정비·오일관리" },
+    { key:"Orange",label:"관리집중", color:"🟠", yearsMin:5,    yearsMax:8,   kmMin:90000, kmMax:150000,reason:"수리비↑",                           advice:"예산 대비" },
+    { key:"Red",   label:"전환권장", color:"🔴", yearsMin:8,    yearsMax:null,kmMin:150000,kmMax:null,  reason:"실사용→소장 가치 전환",            advice:"판매·세컨드카 전환" },
+  ],
+};
+
+function pickStage(vt: VType, years: number, km: number) {
+  const rows = TABLE[vt];
+  const order: StageKey[] = ["Red","Orange","Yellow","Mint","Green","Blue"];
+  for (const key of order) {
+    const r = rows.find(x => x.key === key);
+    if (!r) continue;
+    const yOk = years >= r.yearsMin && (r.yearsMax === null ? true : years < r.yearsMax);
+    const kOk = km    >= r.kmMin    && (r.kmMax    === null ? true : km    < r.kmMax);
+    if (yOk && kOk) return r;
+  }
+  return rows.find(x => x.key === "Blue")!;
+}
+
+router.post("/stage", (req: Request, res: Response) => {
+  let { vehicleType, years, odometer } = req.body || {};
+  if (typeof vehicleType !== "string" || typeof years !== "number" || typeof odometer !== "number") {
+    return res.status(400).json({ error: "Expect { vehicleType:string, years:number, odometer:number }" });
+  }
+
+  vehicleType = (vehicleType || "").toLowerCase();
+  if (!["suv","sedan","hatchback","sports"].includes(vehicleType)) {
+    return res.status(422).json({ error: "Unsupported vehicleType. Use suv|sedan|hatchback|sports" });
+  }
+
+  const row = pickStage(vehicleType as VType, years, odometer);
+  return res.json({
+    stage: row.key,
+    color: row.color,
+    label: row.label,
+    reason: row.reason,
+    advice: row.advice,
+    threshold: {
+      vehicleType,
+      yearsRange: [row.yearsMin, row.yearsMax ?? Infinity],
+      kmRange: [row.kmMin, row.kmMax ?? Infinity],
+    },
+    meta: { version: "v0.1-rules", notes: "규칙기반 MVP(사용자 정의 표 반영)" },
+  });
+});
+
+export default router;
+
+router.get('/ping', (_req, res) => res.json({ ok:true, msg:'ping from lifecycleStage'}));
