@@ -1,14 +1,78 @@
-.App {
-  text-align: center;
+﻿.dashboard {
+  background: #111;
+  color: #fff;
+  min-height: 100vh;
+  padding: 20px;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.subtitle {
+  color: #aaa;
+  margin-bottom: 20px;
+}
+
+.layout {
+  display: flex;
+  gap: 20px;
+}
+
+.sidebar {
+  flex: 1;
+  background: #222;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.main {
+  flex: 3;
+  background: #222;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+form {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(12px + 2vmin);
-  color: white;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+input, select {
+  padding: 8px;
+  border-radius: 5px;
+  border: none;
+  background: #333;
+  color: #fff;
+}
+
+.buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+button {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 5px;
+  background: #0ff;
+  color: #000;
+  cursor: pointer;
+}
+
+.report {
+  background: #111;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.report table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 10px;
+}
+
+.report th, .report td {
+  border-bottom: 1px solid #333;
+  padding: 6px;
+  text-align: center;
 }
