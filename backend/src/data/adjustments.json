@@ -1,0 +1,15 @@
+{
+  "accident": { "none": 0, "minor": -0.03, "major": -0.08 },
+  "exterior": { "good": 0, "normal": -0.02, "bad": -0.05 },
+  "tires":    { "good": 0, "normal": -0.01, "replace": -0.03 },
+  "keys":     { "one": -0.01, "twoPlus": 0 },
+  "lease":    { "none": 0, "active": -0.01 },
+  "regionWeight": { "capital": 0.01, "nonCapital": -0.01, "default": 0 },
+  "mileageBands": [
+    { "maxKm": 50000,  "adj": 0 },
+    { "maxKm": 100000, "adj": -0.02 },
+    { "maxKm": 150000, "adj": -0.04 },
+    { "maxKm": 200000, "adj": -0.06 },
+    { "maxKm": 999999, "adj": -0.10 }
+  ]
+}

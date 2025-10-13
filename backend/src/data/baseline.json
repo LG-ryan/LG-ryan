@@ -1,0 +1,6 @@
+[
+  {"make":"현대","model":"아반떼","trim":"1.6 스마트","year":2020,"region":"capital","baseValue":12000000,"monthlyDepRate":0.012},
+  {"make":"현대","model":"아반떼","trim":"1.6 스마트","year":2020,"region":"nonCapital","baseValue":11800000,"monthlyDepRate":0.0125},
+  {"make":"현대","model":"아반떼","trim":"1.6 프리미엄","year":2020,"region":"capital","baseValue":13000000,"monthlyDepRate":0.011},
+  {"make":"기아","model":"K3","trim":"1.6 프레스티지","year":2020,"region":"capital","baseValue":12200000,"monthlyDepRate":0.012}
+]
